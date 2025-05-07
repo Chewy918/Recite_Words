@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>单词不背，练习不会</title>
+  <style>
+    body { font-family: '宋体', serif; padding: 20px; background: #FFF8DC; }
+    h1 {
+      text-align: center;
+      font-size: 48px;
+      color: #000;
+      font-family: '黑体', sans-serif;
+    }
+    .metrics {
+      display: flex;
+      justify-content: space-around;
+      margin-bottom: 30px;
+      font-size: 24px;
+    }
+    .mode-buttons button, .export-btn, .reset-btn {
+      margin: 10px;
+      padding: 15px 25px;
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(45deg, #87CEFA, #FFA07A);
+      color: white;
+      font-size: 22px;
+      cursor: pointer;
+    }
+    .mode-buttons button.active {
+      background: #FF6347;
+    }
+    .reset-btn {
+      background: linear-gradient(45deg, #FF6347, #FF4500);
+    }
+    .card {
+      background: #FFF;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+      font-size: 24px;
+    }
+    .syllable {
+      display: inline-block;
+      margin: 0 10px;
+      cursor: pointer;
+      padding: 8px;
+      border-bottom: 3px solid #ccc;
+      font-family: 'Times New Roman', serif;
+      font-size: 36px;
+      text-align: center;
+    }
+    .hidden {
+      color: transparent;
+      border-bottom: 3px dashed #ccc;
+    }
+    input[type=text] {
+      padding: 10px;
+      font-size: 24px;
+      width: 60%;
+      font-family: 'Times New Roman', serif;
+    }
+    .answer {
+      margin-top: 15px;
+      font-size: 22px;
+      font-family: '宋体', serif;
+    }
+    .button-container {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+  </style>
+</head>
+<body>
+  <h1>单词不背，练习不会</h1>
+
+  <div class="metrics">
+    <div>单词总数：<span id="totalWords">0</span></div>
+    <div>已掌握：<span id="knownWords">0</span></div>
+    <div>错题数：<span id="wrongWords">0</span></div>
+  </div>
+
+  <div class="button-container">
+    <div class="mode-buttons">
+      <button onclick="switchMode('study')" class="active">背单词模式</button>
+      <button onclick="switchMode('fill')">填空模式</button>
+      <button onclick="exportWrongWords()" class="export-btn">导出错题</button>
+      <button onclick="resetData()" class="reset-btn">重置数据</button>
+    </div>
+  </div>
+
+  <div class="card" id="card"></div>
+
+  <script>
+    const words = [
+ { "word": "example", "syllables": "ex-am-ple", "definition": "a representative form or pattern", "example": "This is an _____ of a good sentence.", "answer": "example" },
+  { "word": "prince", "syllables": "prince", "definition": "a son of a king or queen", "example": "There is a party at the _____house.", "answer": "prince's" },
+  { "word": "fairy", "syllables": "fair-y", "definition": "a small magical creature with wings", "example": "There are two _____in the house.", "answer": "fairies" },
+  { "word": "why", "syllables": "why", "definition": "for what reason", "example": "_____are you late for school?", "answer": "Why" },
+  { "word": "because", "syllables": "be-cause", "definition": "the reason why something happens", "example": "I'm happy _____I got a new book.", "answer": "because" },
+  { "word": "clothes", "syllables": "clothes", "definition": "things we wear like shirts and pants", "example": "My mother washes my _____every Sunday.", "answer": "clothes" },
+  { "word": "let", "syllables": "let", "definition": "allow someone to do something", "example": "My teacher _____me answer the question.", "answer": "let" },
+  { "word": "put on", "syllables": "put-on", "definition": "to wear clothes", "example": "_____your coat before going outside.", "answer": "put on" },
+  { "word": "before", "syllables": "be-fore", "definition": "earlier than something else", "example": "Wash your hands _____eating.", "answer": "before" },
+  { "word": "have to", "syllables": "have-to", "definition": "must do something", "example": "Mike _____finish his homework first.", "answer": "has to" },
+  { "word": "try on", "syllables": "try-on", "definition": "test if clothes fit by wearing them", "example": "Can I _____these shoes before buying?", "answer": "try on" },
+  { "word": "fit", "syllables": "fit", "definition": "be the right size", "example": "These shoes _____me perfectly.", "answer": "fit" },
+  { "word": "take off", "syllables": "take-off", "definition": "remove clothes", "example": "_____your wet shoes at the door.", "answer": "Take off" },
+  { "word": "mushroom", "syllables": "mush-room", "definition": "a soft plant that grows in wet places", "example": "Don't eat wild _____in the forest.", "answer": "mushrooms" },
+  { "word": "late", "syllables": "late", "definition": "after the correct time", "example": "Don't be _____for school tomorrow.", "answer": "late" },
+  { "word": "pick", "syllables": "pick", "definition": "choose or gather something", "example": "Look! Mike  _____apples from the tree.", "answer": "is picking" },
+  { "word": "understand", "syllables": "un-der-stand", "definition": "know what something means", "example": "I don't _____this math problem.", "answer": "understand" },
+  { "word": "be bad for", "syllables": "be-bad-for", "definition": "not good for health", "example": "Smoking _____your lungs.", "answer": "is bad for" },
+  { "word": "leave", "syllables": "leave", "definition": "go away from a place", "example": "Cinderella _____a shoe behind.", "answer": "leaves" },
+  { "word": "behind", "syllables": "be-hind", "definition": "at the back of something", "example": "The cat hides _____the sofa.", "answer": "behind" },
+  { "word": "far from", "syllables": "far-from", "definition": "a long distance away", "example": "My school is _____my home.", "answer": "far from" },
+  { "word": "moon", "syllables": "moon", "definition": "the round thing we see in the sky at night", "example": "The _____looks bright tonight.", "answer": "moon" },
+  { "word": "street", "syllables": "street", "definition": "a road in a city with buildings", "example": "There are many shops on this ______.", "answer": "street" },
+  { "word": "near", "syllables": "near", "definition": "close to something", "example": "I live _____Jinji Lake.", "answer": "near" },
+  { "word": "city", "syllables": "cit-y", "definition": "a big town with many people and buildings", "example": "Suzhou is a beautiful ______.", "answer": "city" },
+  { "word": "by", "syllables": "by", "definition": "using something to travel", "example": "We go to school _____bus.", "answer": "by" },
+  { "word": "bus", "syllables": "bus", "definition": "a big car that carries many people", "example": "I take _____No. 2 to school.", "answer": "Bus" },
+  { "word": "on foot", "syllables": "on-foot", "definition": "walking", "example": "My school is near my home so I go there ______.", "answer": "on foot" },
+  { "word": "metro", "syllables": "met-ro", "definition": "underground train", "example": "We take the _____to Times Square.", "answer": "metro" },
+  { "word": "taxi", "syllables": "tax-i", "definition": "a car you pay to ride in", "example": "My dad called a _____when it rained.", "answer": "taxi" },
+  { "word": "bike", "syllables": "bike", "definition": "a vehicle with two wheels you pedal", "example": "I ride my _____to the park.", "answer": "bike" },
+  { "word": "plane", "syllables": "plane", "definition": "a flying vehicle for long trips", "example": "We'll take a _____to Beijing.", "answer": "plane" },
+  { "word": "ship", "syllables": "ship", "definition": "a big boat for oceans", "example": "The _____carries many containers.", "answer": "ship" },
+  { "word": "train", "syllables": "train", "definition": "vehicles on tracks for travel", "example": "The high-speed _____is very fast.", "answer": "train" },
+  { "word": "ride", "syllables": "ride", "definition": "sit on something moving", "example": "Can I _____your bicycle?", "answer": "ride" },
+  { "word": "show", "syllables": "show", "definition": "let someone see something", "example": "_____me your new toy.", "answer": "Show" },
+  { "word": "young", "syllables": "young", "definition": "not old", "example": "My _____brother is in kindergarten.", "answer": "young" },
+  { "word": "basket", "syllables": "bas-ket", "definition": "a container made of sticks", "example": "Put the apples in the ______.", "answer": "basket" },
+  { "word": "ask the way", "syllables": "ask-the-way", "definition": "ask how to get somewhere", "example": "Mike is  _____to the museum.", "answer": "asking the way" },
+  { "word": "get to", "syllables": "get-to", "definition": "arrive at a place", "example": "How do I _____Suzhou Museum?", "answer": "get to" },
+  { "word": "take", "syllables": "take", "definition": "use transportation", "example": "Mike _____Bus 178 to school.", "answer": "takes" },
+  { "word": "get on", "syllables": "get-on", "definition": "enter a vehicle", "example": "_____the bus at Zhongyuan Road Stop.", "answer": "Get on" },
+  { "word": "station", "syllables": "sta-tion", "definition": "place where buses/trains stop", "example": "We'll meet at Xingtang ______.", "answer": "Station" },
+  { "word": "get off", "syllables": "get-off", "definition": "leave a vehicle", "example": "_____at Renmin Road station.", "answer": "Get off" },
+  { "word": "walk", "syllables": "walk", "definition": "move using your feet", "example": "Let's _____to the park.", "answer": "walk" },
+  { "word": "bookshop", "syllables": "book-shop", "definition": "store that sells books", "example": "I bought this storybook at the ______.", "answer": "bookshop" },
+  { "word": "next to", "syllables": "next-to", "definition": "very near something", "example": "Sit _____your friend.", "answer": "next to" },
+  { "word": "sun", "syllables": "sun", "definition": "the bright star that gives us light", "example": "The _____rises in the east.", "answer": "sun" },
+  { "word": "ask...for help", "syllables": "ask-for-help", "definition": "request assistance", "example": "When you can't find the way- you can ask a policeman _____.", "answer": "for help" },
+  { "word": "excuse", "syllables": "ex-cuse", "definition": "say sorry politely", "example": "_____me- may I ask a question?", "answer": "Excuse" },
+  { "word": "along", "syllables": "a-long", "definition": "following the length of something", "example": "Walk _____this road to find it.", "answer": "along" },
+  { "word": "turn right", "syllables": "turn-right", "definition": "go to the right side", "example": "_____at the traffic lights.", "answer": "Turn right" },
+  { "word": "traffic light", "syllables": "traffic-light", "definition": "colored lights controlling cars", "example": "Stop when the _____is red.", "answer": "traffic light" },
+  { "word": "on your right", "syllables": "on your right", "definition": "to the right side of you", "example": "The bank is _____your right next to the post office.", "answer": "on" },
+  { "word": "cinema", "syllables": "cin-e-ma", "definition": "place to watch movies", "example": "Let's see a film at the ______.", "answer": "cinema" },
+  { "word": "hospital", "syllables": "hos-pi-tal", "definition": "place where doctors work", "example": "My mother works in a ______.", "answer": "hospital" },
+  { "word": "shop", "syllables": "shop", "definition": "place to buy things", "example": "There's a candy _____near school.", "answer": "shop" },
+  { "word": "zoo", "syllables": "zoo", "definition": "place with animals to see", "example": "We saw pandas at the ______.", "answer": "zoo" },
+  { "word": "turn left", "syllables": "turn-left", "definition": "go to the left side", "example": "_____at the second corner.", "answer": "Turn left" },
+  { "word": "supermarket", "syllables": "su-per-mar-ket", "definition": "big store selling food and goods", "example": "Mom buys vegetables at the ______.", "answer": "supermarket" },
+  { "word": "film", "syllables": "film", "definition": "movie", "example": "This cartoon _____is very funny.", "answer": "film" },
+  { "word": "stop", "syllables": "stop", "definition": "place where buses halt", "example": "Wait for me at the bus ______.", "answer": "stop" },
+  { "word": "full", "syllables": "full", "definition": "with no empty space", "example": "The bus is _____in the morning.", "answer": "full" },
+  { "word": "over", "syllables": "over", "definition": "finished", "example": "School is _____at 4:30 pm.", "answer": "over" },
+  { "word": "doctor", "syllables": "doc-tor", "definition": "person who treats sick people", "example": "The _____gave me some medicine.", "answer": "doctor" },
+  { "word": "feel", "syllables": "feel", "definition": "experience an emotion or physical sense", "example": "The ladybird _____happy when it eats leaves.", "answer": "feels" },
+  { "word": "check", "syllables": "check", "definition": "examine carefully", "example": "The doctor will _____your temperature.", "answer": "check" },
+  { "word": "should", "syllables": "should", "definition": "used to say what is right", "example": "You _____wash hands before eating.", "answer": "should" },
+  { "word": "have a rest", "syllables": "have-a-rest", "definition": "stop to relax", "example": "You look tired- go and ______.", "answer": "have a rest" },
+  { "word": "medicine", "syllables": "med-i-cine", "definition": "special liquid/pill for health", "example": "Take your _____after lunch.", "answer": "medicine" },
+  { "word": "drink water", "syllables": "drink-water", "definition": "have water", "example": "Remember to _____every day.", "answer": "drink water" },
+  { "word": "toothache", "syllables": "tooth-ache", "definition": "pain in a tooth", "example": "I can't eat because I have a ______.", "answer": "toothache" },
+  { "word": "dentist", "syllables": "den-tist", "definition": "doctor for teeth", "example": "Visit the _____twice a year.", "answer": "dentist" },
+  { "word": "anything", "syllables": "an-y-thing", "definition": "whatever thing", "example": "You can ask me _____about the lesson.", "answer": "anything" },
+  { "word": "brush", "syllables": "brush", "definition": "clean with a brush", "example": "_____your teeth twice daily.", "answer": "Brush" },
+  { "word": "bedtime", "syllables": "bed-time", "definition": "time to go to sleep", "example": "My _____is 9 o'clock.", "answer": "bedtime" },
+  { "word": "giraffe", "syllables": "gi-raffe", "definition": "tall African animal with long neck", "example": "The _____at the zoo eat leaves.", "answer": "giraffes" },
+  { "word": "point at", "syllables": "point at", "definition": "show something by directing finger", "example": "Don't _____people- it's not polite.", "answer": "point at" },
+  { "word": "neck", "syllables": "neck", "definition": "part between head and shoulders", "example": "The scarf keeps my _____warm.", "answer": "neckm" },
+  { "word": "parent", "syllables": "par-ent", "definition": "mother or father", "example": "My _____helps me with homework.", "answer": "parent" },
+  { "word": "clean", "syllables": "clean", "definition": "make something not dirty", "example": "_____your room every week.", "answer": "Clean" },
+  { "word": "cook", "syllables": "cook", "definition": "prepare food", "example": "My father _____delicious fish now.", "answer": "is cooking" },
+  { "word": "sweep the floor", "syllables": "sweep-the-floor", "definition": "clean floor with a broom", "example": "Mike _____every Saturday.", "answer": "sweeps the floor" },
+  { "word": "busy", "syllables": "busy", "definition": "having many things to do", "example": "Mom is _____cooking dinner.", "answer": "busy" },
+  { "word": "wash the dishes", "syllables": "wash-the-dishes", "definition": "clean plates after eating", "example": "Children should help _____the dishes.", "answer": "wash" },
+  { "word": "make the bed", "syllables": "make-the-bed", "definition": "arrange bed neatly", "example": "_____the bed after waking up.", "answer": "Make" },
+  { "word": "grow", "syllables": "grow", "definition": "become bigger", "example": "Plants _____faster in spring.", "answer": "grow" },
+  { "word": "garden", "syllables": "gar-den", "definition": "place with flowers and plants", "example": "Grandma grows vegetables in her ______.", "answer": "garden" },
+  { "word": "sweet", "syllables": "sweet", "definition": "taste like sugar", "example": "The watermelon is very ______.", "answer": "sweet" },
+  { "word": "pest", "syllables": "pest", "definition": "insect that harms plants", "example": "Farmers don't like _____in their fields.", "answer": "pests" },
+  { "word": "ladybird", "syllables": "la-dy-bird", "definition": "small red beetle with black spots", "example": "The _____help eat bad insects.", "answer": "ladybirds" },
+  { "word": "go away", "syllables": "go-away", "definition": "leave", "example": "Please tell the mosquito to ______.", "answer": "go away" },
+  { "word": "leaf", "syllables": "leaf", "definition": "green part of a plant", "example": "The _____turns yellow in autumn.", "answer": "leaf" },
+  { "word": "game", "syllables": "game", "definition": "activity for fun", "example": "We play basketball _____after class.", "answer": "games" },
+  { "word": "smell", "syllables": "smell", "definition": "use your nose to sense", "example": "The flower _____nice.", "answer": "smells" },
+  { "word": "meat", "syllables": "meat", "definition": "food from animals like beef", "example": "We eat _____and vegetables for dinner.", "answer": "meat" },
+  { "word": "vegetable", "syllables": "vege-ta-ble", "definition": "plant food like carrots", "example": "Eat more _____to stay healthy.", "answer": "vegetables" },
+  { "word": "tomato", "syllables": "to-ma-to", "definition": "red round vegetable", "example": "I like _____and egg soup.", "answer": "tomatoes" },
+  { "word": "potato", "syllables": "po-ta-to", "definition": "brown round vegetable", "example": "My favorite food is _____chips.", "answer": "potato" },
+  { "word": "wait", "syllables": "wait", "definition": "stay until something happens", "example": "Please _____for your turn.", "answer": "wait" },
+  { "word": "look for", "syllables": "look-for", "definition": "try to find something", "example": "I need to _____my lost pencil.", "answer": "look for" },
+  { "word": "ready", "syllables": "read-y", "definition": "prepared", "example": "Are you _____for the test?", "answer": "ready" },
+  { "word": "yummy", "syllables": "yum-my", "definition": "delicious", "example": "This mooncake is ______!", "answer": "yummy" },
+  { "word": "love", "syllables": "love", "definition": "like very much", "example": "I _____playing football.", "answer": "love" },
+  { "word": "bread", "syllables": "bread", "definition": "food made from flour", "example": "We eat _____for breakfast.", "answer": "bread" },
+  { "word": "win", "syllables": "win", "definition": "be the best in a competition", "example": "Our team wants to _____the game.", "answer": "win" },
+  { "word": "yeah", "syllables": "yeah", "definition": "yes (informal)", "example": "______- I got full marks!", "answer": "Yeah" },
+  { "word": "angry", "syllables": "an-gry", "definition": "feeling mad", "example": "Don't be ______- it was an accident.", "answer": "angry" },
+  { "word": "spot", "syllables": "spot", "definition": "small round mark", "example": "There are seven _____on this ladybird.", "answer": "spots" },
+  { "word": "catch", "syllables": "catch", "definition": "stop and hold something moving", "example": "Can you _____the ball?", "answer": "catch" },
+  { "word": "drive", "syllables": "drive", "definition": "make a car move", "example": "My dad will _____us to school.", "answer": "drive" },
+  { "word": "away", "syllables": "a-way", "definition": "to another place", "example": "The birds flew ______.", "answer": "away" },
+  { "word": "festival", "syllables": "fes-ti-val", "definition": "special celebration day", "example": "The Spring _____is my favorite holiday.", "answer": "Festival" },
+  { "word": "January", "syllables": "Jan-u-ar-y", "definition": "first month", "example": "New Year's Day is in ______.", "answer": "January" },
+  { "word": "February", "syllables": "Feb-ru-ar-y", "definition": "second month", "example": "Winter vacation often ends in ______.", "answer": "Februray" },
+  { "word": "call", "syllables": "call", "definition": "name something", "example": "We _____it \"tangyuan\" in Chinese.", "answer": "call" },
+  { "word": "together", "syllables": "to-geth-er", "definition": "with each other", "example": "Let's work _____on this project.", "answer": "together" },
+  { "word": "dragon", "syllables": "drag-on", "definition": "fire-breathing story animal", "example": "There are  _____boat races in some places.", "answer": "dragon" },
+  { "word": "May", "syllables": "May", "definition": "fifth month", "example": "Labor Day is on _____1st.", "answer": "May" },
+  { "word": "June", "syllables": "June", "definition": "sixth month", "example": "Children's Day is in ______.", "answer": "June" },
+  { "word": "race", "syllables": "race", "definition": "competition of speed", "example": "We watched a boat _____on the lake.", "answer": "race" },
+  { "word": "place", "syllables": "place", "definition": "location", "example": "This is a good _____for photos.", "answer": "place" },
+  { "word": "dumpling", "syllables": "dump-ling", "definition": "food with filling inside", "example": "Mom made pork _____for dinner.", "answer": "dumplings" },
+  { "word": "September", "syllables": "Sep-tem-ber", "definition": "ninth month", "example": "School starts in ______.", "answer": "September" },
+  { "word": "October", "syllables": "Oc-to-ber", "definition": "tenth month", "example": "National Day is in ______.", "answer": "October" },
+  { "word": "double", "syllables": "dou-ble", "definition": "twice as much", "example": "This word has _____letters \"p\".", "answer": "double" },
+  { "word": "November", "syllables": "No-vem-ber", "definition": "eleventh month", "example": "The weather gets cold in ______.", "answer": "November" },
+  { "word": "old", "syllables": "old", "definition": "having lived many years", "example": "The Double Ninth Festival is for _____people.", "answer": "old" },
+  { "word": "mountain", "syllables": "moun-tain", "definition": "very high hill", "example": "I like climbing ______.", "answer": "mountains" },
+  { "word": "favorite", "syllables": "fa-vor-ite", "definition": "liked more than others", "example": "What's your _____subject?", "answer": "favourite" },
+  { "word": "birthday", "syllables": "birth-day", "definition": "day someone was born", "example": "My _____is August 12th.", "answer": "birthday" },
+  { "word": "eleventh", "syllables": "e-lev-enth", "definition": "number 11", "example": "Our classroom is on the _____floor.", "answer": "eleventh" },
+  { "word": "eighth", "syllables": "eighth", "definition": "number 8", "example": "I live on the _____floor.", "answer": "eighth" },
+  { "word": "April", "syllables": "A-pril", "definition": "fourth month", "example": "Fool's Day is on _____1st.", "answer": "April" },
+  { "word": "together", "syllables": "to-geth-er", "definition": "with each other", "example": "Let's work _____on this project.", "answer": "together" },
+  { "word": "game", "syllables": "game", "definition": "activity for fun", "example": "We have basketball _____after class.", "answer": "games" },
+  { "word": "March", "syllables": "March", "definition": "third month", "example": "Tree Planting Day is in ______.", "answer": "March" },
+  { "word": "July", "syllables": "Ju-ly", "definition": "seventh month", "example": "Summer vacation starts in ______.", "answer": "July" },
+  { "word": "August", "syllables": "Au-gust", "definition": "eighth month", "example": "It's very hot in _____in Suzhou.", "answer": "August" },
+  { "word": "December", "syllables": "De-cem-ber", "definition": "twelfth month", "example": "Christmas is in ______.", "answer": "December" },
+  { "word": "hero", "syllables": "he-ro", "definition": "very brave person", "example": "My father is my ______.", "answer": "hero" },
+  { "word": "play", "syllables": "play", "definition": "act in a drama", "example": "We'll _____Snow White in English class.", "answer": "play" },
+  { "word": "number", "syllables": "num-ber", "definition": "math symbol like 1- 2", "example": "Write your phone _____here.", "answer": "number" },
+  { "word": "password", "syllables": "pass-word", "definition": "secret word for computer", "example": "Don't tell others your ______.", "answer": "password" },
+  { "word": "answer", "syllables": "an-swer", "definition": "reply to a question", "example": "Raise your hand to _____the question.", "answer": "answer" },
+  { "word": "fourth", "syllables": "fourth", "definition": "number 4", "example": "Thursday is the _____day of the week.", "answer": "fourth" },
+  { "word": "start", "syllables": "start", "definition": "begin", "example": "_____reading the story now.", "answer": "Start" },
+  { "word": "fight", "syllables": "fight", "definition": "use hands to hit", "example": "Don't _____with classmates.", "answer": "fight" }
+    ];
+
+    let currentIndex = 0, mode = 'study';
+    let known = new Set(JSON.parse(localStorage.getItem('knownWords') || '[]'));
+    let wrong = new Set(JSON.parse(localStorage.getItem('wrongWords') || '[]'));
+    let reviewSchedule = JSON.parse(localStorage.getItem('reviewSchedule') || '{}');
+
+    function updateMetrics() {
+      document.getElementById('totalWords').innerText = words.length;
+      document.getElementById('knownWords').innerText = known.size;
+      document.getElementById('wrongWords').innerText = wrong.size;
+    }
+
+    function playAudio(text) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'en-US';
+      speechSynthesis.speak(utterance);
+    }
+
+    function renderCard() {
+      const card = document.getElementById('card');
+      card.innerHTML = '';
+      const wordObj = words[currentIndex];
+
+      if (mode === 'study') {
+        const def = document.createElement('div');
+        def.innerHTML = '<b>释义：</b>' + wordObj.definition;
+        card.appendChild(def);
+
+        const pronounceBtn = document.createElement('button');
+        pronounceBtn.innerText = '🔊 发音';
+        pronounceBtn.onclick = () => playAudio(wordObj.word);
+        card.appendChild(pronounceBtn);
+
+        // 按音节分割并显示
+        const syllables = wordObj.syllables.split('-');
+        const line = document.createElement('div');
+        line.style.textAlign = 'center';
+        line.style.margin = '20px 0';
+        
+        syllables.forEach((syllable) => {
+          const span = document.createElement('span');
+          span.className = 'syllable';
+          span.innerText = syllable;
+          span.onclick = function() {
+            this.classList.toggle('hidden');
+          };
+          line.appendChild(span);
+        });
+        card.appendChild(line);
+
+        // 添加显示/隐藏所有音节按钮
+        const toggleAllBtn = document.createElement('button');
+        toggleAllBtn.innerText = '显示/隐藏所有音节';
+        toggleAllBtn.onclick = () => {
+          const syllables = line.querySelectorAll('.syllable');
+          const allHidden = Array.from(syllables).every(s => s.classList.contains('hidden'));
+          syllables.forEach(s => {
+            if(allHidden) {
+              s.classList.remove('hidden');
+            } else {
+              s.classList.add('hidden');
+            }
+          });
+        };
+        card.appendChild(toggleAllBtn);
+
+        const nextBtn = document.createElement('button');
+        nextBtn.innerText = '下一个';
+        nextBtn.onclick = () => {
+          known.add(wordObj.word);
+          localStorage.setItem('knownWords', JSON.stringify([...known]));
+          scheduleReview(wordObj.word);
+          currentIndex = (currentIndex + 1) % words.length;
+          renderCard(); updateMetrics();
+        };
+        card.appendChild(nextBtn);
+      } else if (mode === 'fill') {
+        const question = document.createElement('div');
+        question.innerHTML = '<b>请完成句子：</b><br>' + wordObj.example;
+        card.appendChild(question);
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        card.appendChild(input);
+
+        const ansDiv = document.createElement('div');
+        ansDiv.className = 'answer';
+        card.appendChild(ansDiv);
+
+        const submit = document.createElement('button');
+        submit.innerText = '提交';
+        submit.onclick = () => {
+          if (input.value.trim().toLowerCase() === wordObj.answer.toLowerCase()) {
+            ansDiv.innerText = '✅ 正确！';
+            known.add(wordObj.word);
+            scheduleReview(wordObj.word);
+          } else {
+            ansDiv.innerText = '❌ 错误，正确答案是：' + wordObj.answer;
+            wrong.add(wordObj.word);
+          }
+          localStorage.setItem('knownWords', JSON.stringify([...known]));
+          localStorage.setItem('wrongWords', JSON.stringify([...wrong]));
+          updateMetrics();
+        };
+        card.appendChild(submit);
+      }
+    }
+
+    function switchMode(m) {
+      if (m !== 'study' && m !== 'fill') return;
+      mode = m;
+      document.querySelectorAll('.mode-buttons button').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.mode-buttons button')[m === 'study' ? 0 : 1].classList.add('active');
+      renderCard();
+    }
+
+    function exportWrongWords() {
+      const wrongList = Array.from(wrong).map(word => {
+        const w = words.find(w => w.word === word);
+        return `- ${w.word}\n释义：${w.definition}\n例句：${w.example}`;
+      }).join("\n\n");
+
+      const blob = new Blob([wrongList], { type: 'text/plain;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = '错词列表.txt';
+      a.click();
+    }
+
+    function resetData() {
+      if(confirm('确定要重置所有学习数据吗？这将清除所有已掌握和错题记录。')) {
+        known = new Set();
+        wrong = new Set();
+        reviewSchedule = {};
+        localStorage.removeItem('knownWords');
+        localStorage.removeItem('wrongWords');
+        localStorage.removeItem('reviewSchedule');
+        updateMetrics();
+        renderCard();
+        alert('数据已重置！');
+      }
+    }
+
+    function scheduleReview(word) {
+      const now = Date.now();
+      reviewSchedule[word] = now + 1 * 24 * 60 * 60 * 1000;
+      localStorage.setItem('reviewSchedule', JSON.stringify(reviewSchedule));
+    }
+
+    renderCard();
+    updateMetrics();
+  </script>
+</body>
+</html>
